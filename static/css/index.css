@@ -1,0 +1,14 @@
+html * {
+  font-size: 1em !important;
+  color: #000 !important;
+  font-family: Arial !important;
+}
+
+table, th, td {
+  border: 1px solid;
+  padding: 0.2rem;
+}
+
+table {
+  border-collapse: collapse;
+}

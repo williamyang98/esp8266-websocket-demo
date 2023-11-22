@@ -11,22 +11,50 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div>
-      <h1>A body</h1>
-      <input type="text" id="ws_url_textedit"/>
-      <button id="ws_button">Connect</button>
-      <button id="dht11_refresh">Refresh DHT11</button>
-      <table>
-        <tr>
-          <th>Temperature</th>
-          <th>Humidity</th>
-          <th>Status</th>
-        </tr>
-        <tr>
-          <td id="dht11_temperature">?</td>
-          <td id="dht11_humidity">?</td>
-          <td id="dht11_status">?</td>
-        </tr>
-      </table>
+      <h1>Websocket Demo</h1>
+      <div>
+        <input type="text" id="ws_url_textedit"/>
+        <button id="ws_button">Connect</button>
+      </div>
+
+      <h3>DHT11 temperature humidity sensor</h3>
+      <div>
+        <button id="dht11_refresh">Refresh</button>
+        <table>
+          <tr>
+            <th>Temperature</th>
+            <th>Humidity</th>
+            <th>Status</th>
+          </tr>
+          <tr>
+            <td id="dht11_temperature">?</td>
+            <td id="dht11_humidity">?</td>
+            <td id="dht11_status">?</td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>LED controls</h3>
+      <div>
+        <button id="led_get_all">Get All</button>
+        <button id="led_set_all">Set All</button>
+        <table id="led_controls">
+          <tr>
+            <th>LED</th>
+            <th>Value</th>
+          </tr>
+        </table> 
+      </div>
+
+      <h3>PC Controls</h3>
+      </div>
+        <button id="pc_reset">Reset</button>
+        <button id="pc_power_on">Power on</button>
+        <button id="pc_power_off">Power off</button>
+        <button id="pc_get_status">Get status</button>
+        <div id="pc_status">Status: ?</div>
+      </div>
+
     </div>
     <script type="module">
       import { App } from "./js/App.js";

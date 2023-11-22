@@ -2,6 +2,7 @@
 #define __WEBSOCKET_H__
 
 #include <esp_http_server.h>
+#include <esp_err.h>
 
 #define WEBSOCKET_OPCODE_CONTINUATION 0x00
 #define WEBSOCKET_OPCODE_TEXT 0x01
@@ -20,6 +21,8 @@ typedef struct websocket_ctx {
     websocket_exit_callback on_exit;
 } websocket_ctx;
 
-httpd_handle_t start_websocket(uint32_t port);
+// NOTE: http_request expects the user_ctx to be a websocket_ctx instance
+esp_err_t websocket_handler(httpd_req_t *request);
+esp_err_t websocket_write(httpd_req_t *request, char *data, int length, uint8_t opcode);
 
 #endif

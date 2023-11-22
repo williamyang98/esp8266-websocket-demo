@@ -1,5 +1,5 @@
-#include "server.h"
-#include "files.h"
+#include "webserver.h"
+#include "webserver_files.h"
 
 #include <esp_http_server.h>
 #include <esp_log.h>
@@ -17,7 +17,7 @@
 
 static esp_err_t send_file(httpd_req_t *request);
 
-httpd_uri_t index_html_uri = {
+static httpd_uri_t index_html_uri = {
     .uri = "/",
     // .uri = "/index.html",
     .method = HTTP_GET,
@@ -25,36 +25,32 @@ httpd_uri_t index_html_uri = {
     .user_ctx = (void *)INDEX_JS_ID
 };
 
-httpd_uri_t main_js_uri = {
+static httpd_uri_t main_js_uri = {
     .uri = "/main.js",
     .method = HTTP_GET,
     .handler = send_file,
     .user_ctx = (void *)MAIN_JS_ID
 };
 
-httpd_uri_t chunk_js_uri = {
+static httpd_uri_t chunk_js_uri = {
     .uri = "/chunk.js",
     .method = HTTP_GET,
     .handler = send_file,
     .user_ctx = (void *)CHUNK_JS_ID
 };
 
-httpd_handle_t start_webserver(uint32_t port) {
-    httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = port;
-
-    // Start the httpd server
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_register_uri_handler(server, &index_html_uri);
-        httpd_register_uri_handler(server, &main_js_uri);
-        httpd_register_uri_handler(server, &chunk_js_uri);
-        return server;
+esp_err_t webserver_register_endpoints(httpd_handle_t server) {
+    if (server == NULL) {
+        ESP_LOGE(TAG, "server was null");
+        return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Error starting server!");
-    return NULL;
+    httpd_register_uri_handler(server, &index_html_uri);
+    httpd_register_uri_handler(server, &main_js_uri);
+    httpd_register_uri_handler(server, &chunk_js_uri);
+    ESP_LOGD(TAG, "registered endpoints");
+
+    return ESP_OK;
 }
 
 esp_err_t send_file(httpd_req_t *request) {

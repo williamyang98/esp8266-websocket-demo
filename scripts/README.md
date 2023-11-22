@@ -1,27 +1,25 @@
 # Pre-requisites
-1. Download msys2 and use MSYS environment (not mingw64, mingw32, ...) or use WSL
-
-2. Downloading RTOS SDK
-- ```git clone https://github.com/espressif/ESP8266_RTOS_SDK.git esp8266-rtos-sdk --recurse-submodule```
-
-3. Setup RTOS SDK python environment
-- ```cd esp8266-rtos-sdk```
+1. Download msys2 and use MSYS environment (not mingw64, mingw32, ...) or use WSL.
+2. Download RTOS SDK when cloning this repo recursively.
+3. Install xtensa toolchain.
+- ```./scripts/install_xtensa_toolchain.sh```.
+4. Setup RTOS SDK python environment
 - ```python -m venv venv```
-- ```source ./venv/bin/activate```
-- ```SETUPTOOLS_USE_DISTUTILS=stdlib pip install -r requirements``` 
+- ```source ./venv/bin/activate``` or ```source ./venv/Scripts/activate``` depending on OS.
+- ```SETUPTOOLS_USE_DISTUTILS=stdlib pip install -r vendor/esp8266-rtos-sdk/requirements.txt``` 
     - [fix_1](https://stackoverflow.com/a/76882830)
 
-4. Downloading xtensa-lx106 toolchain
-- [Download from here](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/linux-setup.html)
-- ```tar -xzf xtensa-lx106-*.tar.gz```  
-
-# Build
+# Building binaries
 1. ```bash```
-2. ```source setup_esp8266_environment.sh```
-3. ```cmake_configure.sh```
+2. ```source ./scripts/init_env.sh```
+3. ```./scripts/cmake_configure.sh```
 4. ```ninja -C build```
 
 # Flashing
-1. Determine serial port from ```/dev/tty??```
-2. Hold flash button on ESP8266-12E board while running next command
-3. ```ESPPORT=/dev/tty?? ninja -C build flash```
+1. Determine serial port from ```/dev/tty??```.
+2. Set environment variables.
+- ```export ESPPORT=/dev/tty??```
+3. Hold flash button on ESP8266-12E board while running flash command.
+- ```ninja -C build flash```
+4. Running serial monitor.
+- ```./scripts/serial_monitor.sh```

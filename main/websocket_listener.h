@@ -2,7 +2,6 @@
 #define __WEBSOCKET_LISTENER_H__
 
 #include "websocket.h"
-#include "websocket_io.h"
 #include <esp_err.h>
 
 esp_err_t listen_websocket_start(httpd_req_t *request);

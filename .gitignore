@@ -1,6 +1,19 @@
-sdkconfig.old
 .vscode/
 .cache/
+
+# build output
 build/
 build-*/
 build_*/
+
+# old sdk configuration backup
+sdkconfig.old
+
+# python virtual environments
+venv/
+.venv/
+pyvenv/
+.pyvenv/
+
+# downloaded toolchain
+vendor/xtensa-lx106-elf/

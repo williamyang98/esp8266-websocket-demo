@@ -2,7 +2,8 @@
 #define __WEBSERVER_INIT_H__
 
 #include <esp_http_server.h>
+#include <esp_err.h>
 
-httpd_handle_t start_webserver(uint32_t port);
+esp_err_t webserver_register_endpoints(httpd_handle_t server);
 
 #endif

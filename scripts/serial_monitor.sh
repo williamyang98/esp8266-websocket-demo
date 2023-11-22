@@ -1,2 +1,2 @@
 #!/bin/sh
-socat - /dev/ttyS2,b115200,raw
+python $IDF_PATH/tools/idf_monitor.py --port $ESPPORT --baud 115200 ./build/hello-world.elf

@@ -1,5 +1,6 @@
 #include "websocket_listener.h"
 
+#include "global_periphs.h"
 #include "shifted_pwm.h"
 #include "pc_io.h"
 #include "pc_io_interrupt.h"
@@ -58,13 +59,13 @@ esp_err_t listen_websocket_exit(httpd_req_t *request) {
 void handle_dht11(httpd_req_t *request, uint8_t opcode, uint8_t *data, int length) {
     ESP_LOGD("dht11-websocket", "Got request");
     reply_buffer[0] = DHT11_CMD;
-    if (dht11_read() != ESP_OK) {
+    if (dht11_read(&dht11_sensor) != ESP_OK) {
         reply_buffer[1] = 0xFF;
         websocket_write(request, (char *)reply_buffer, 2, opcode);
         return;
     }
-    reply_buffer[1] = dht11_get_humidity();
-    reply_buffer[2] = dht11_get_temperature();
+    reply_buffer[1] = dht11_sensor.humidity;
+    reply_buffer[2] = dht11_sensor.temperature;
     websocket_write(request, (char *)reply_buffer, 3, opcode);
 }
 

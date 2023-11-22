@@ -8,37 +8,31 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/event_groups.h>
+#include <rom/ets_sys.h>
+#include <esp_system.h>
+#include <esp_spi_flash.h>
+#include <esp_log.h>
+#include <driver/gpio.h>
+#include <driver/uart.h>
+#include <nvs_flash.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-
-#include "rom/ets_sys.h"
-
-#include "esp_system.h"
-#include "esp_spi_flash.h"
-#include "esp_log.h"
-
-#include "driver/gpio.h"
-#include "driver/uart.h"
-
-#include "nvs_flash.h"
-
+#include "global_periphs.h"
 #include "shifted_pwm.h"
 #include "wifi_sta.h"
 #include "pc_io.h"
+#include "pc_io_interrupt.h"
 #include "dht11.h"
 
+#include "webserver.h"
 #include "websocket.h"
-#include "websocket_io.h"
 #include "websocket_listener.h"
 
-#include "web_server/server.h"
+#define INIT_TAG "main-init"
 
-#define INIT_TAG "initialisation"
-
-static httpd_handle_t websocket = NULL;
-static httpd_handle_t webserver = NULL;
+static httpd_handle_t http_server = NULL;
 
 static websocket_ctx websocket_uri_context = {
     .on_start = listen_websocket_start,
@@ -66,17 +60,41 @@ void app_main()
     }
 
     wifi_init_sta();
-    dht11_init();
-    pc_io_init();
 
+    dht11_init(&dht11_sensor);
+    pc_io_init();
+    pc_io_interrupt_init();
     for (int i = 0; i < 8; i++) {
         set_pwm_value(i, 0);
     }
+    ESP_LOGI(INIT_TAG, "setup sensors");
 
-    websocket = start_websocket(3200);
-    webserver = start_webserver(80);
-    httpd_register_uri_handler(websocket, &websocket_uri);
+    // startup webserver
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    uint32_t server_port = 80;
+    config.server_port = server_port;
+    config.ctrl_port = server_port;
+    config.recv_wait_timeout = 60*60*1; // 1 hour timeout for websocket
+    config.lru_purge_enable = true;
+
+    if (httpd_start(&http_server, &config) == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "created http server on port: %d", server_port);
+    } else {
+        ESP_LOGE(INIT_TAG, "failed to start webserver on port: %d", server_port);
+        return;
+    }
+
+    if (webserver_register_endpoints(http_server) == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "registered webserver endpoints on port: %d", server_port);
+    } else {
+        ESP_LOGE(INIT_TAG, "failed to register endpoints on port: %d", server_port);
+        return;
+    }
+
+    httpd_register_uri_handler(http_server, &websocket_uri);
+    ESP_LOGI(INIT_TAG, "registered websocket handler on port: %d", server_port);
+
     // vTaskStartScheduler();
     // ESP_LOGI(INIT_TAG, "Starting task scheduler!\n");
-    ESP_LOGI(INIT_TAG, "Finished initialisation!");
+    ESP_LOGI(INIT_TAG, "finished initialisation");
 }

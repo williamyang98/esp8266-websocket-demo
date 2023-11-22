@@ -15,5 +15,10 @@ venv/
 pyvenv/
 .pyvenv/
 
+# python garbage
+python.stackdump
+*.pyo
+*.pyc
+
 # downloaded toolchain
 vendor/xtensa-lx106-elf/

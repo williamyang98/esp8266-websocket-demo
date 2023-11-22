@@ -1,4 +1,10 @@
-set(COMPONENT_ADD_INCLUDEDIRS include)
-set(COMPONENT_SRCDIRS include)
-set(COMPONENT_REQUIRES esp_http_server)
-register_component()
+set(SRC_FILES
+    "src/files_data.c"
+    "src/webserver.c"
+)
+idf_component_register(
+    SRCS ${SRC_FILES}
+    INCLUDE_DIRS "include"
+    PRIV_INCLUDE_DIRS "src"
+    REQUIRES httpd_server
+)

@@ -1,17 +1,18 @@
 #include "wifi_sta.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/event_groups.h>
+#include <esp_system.h>
+#include <esp_event.h>
+#include <esp_netif.h>
+#include <esp_event_loop.h>
+#include <esp_wifi.h>
+#include <esp_log.h>
 
-#include "esp_system.h"
-#include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_event_loop.h"
-#include "esp_wifi.h"
-
-#include "esp_log.h"
-
+// NOTE: wifi_sta_config.h is ignored in git repository and requires manual user creation, expects:
+//       #define WIFI_SSID "your_ssid"
+//       #define WIFI_PASS "your_pass"
 #include "wifi_sta_config.h"
 
 #define TAG "wifi-sta"
@@ -39,17 +40,6 @@ void wifi_init_sta() {
             .password = WIFI_PASS
         }, 
     };
-    // // wifi_sta_config_t has fixed length buffers for ssid and password
-    // for (int i = 0; i < 32; i++) {
-    //     const char c = WIFI_SSID[i];
-    //     wifi_config.sta.ssid[i] = c;
-    //     if (c == '\0') break;
-    // }
-    // for (int i = 0; i < 64; i++) {
-    //     const char c = WIFI_PASS[i];
-    //     wifi_config.sta.password[i] = c;
-    //     if (c == '\0') break;
-    // }
     // connect to all security modes
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 

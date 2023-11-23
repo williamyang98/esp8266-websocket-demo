@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 cd vendor/
 
 rm -rf xtensa-lx106-elf/

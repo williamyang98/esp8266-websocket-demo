@@ -12,9 +12,11 @@
 ## Building binaries
 1. ```bash```
 2. ```source ./scripts/init_env.sh```
-3. ```./scripts/cmake_configure.sh```
-4. ```python ./scripts/generate_webpages.py```
-4. ```ninja -C build```
+3. ```python ./scripts/generate_webpages.py```
+4. ```./scripts/cmake_configure.sh```
+5. ```ninja -C build```
+
+If changes are made to webpage files in ```./static```, then run ```python ./scripts/generate_webpages.py``` again.
 
 ## Flashing
 1. Determine serial port from ```/dev/tty??```.

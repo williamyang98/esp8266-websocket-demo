@@ -30,3 +30,7 @@ If changes are made to webpage files in ```./static```, then run ```python ./scr
 ## Debugging website locally
 To avoid reflashing while modifying the webpage run the website locally.
 - ```./scripts/serve_local_website.sh```
+
+## Additional notes
+- ```cryptography``` library in python may not install correctly on msys2. Just comment it out in ```vendor/esp8266-rtos-sdk/requirements.txt```.
+

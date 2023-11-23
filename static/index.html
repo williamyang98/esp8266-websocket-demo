@@ -10,14 +10,16 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div>
+    <div class="container">
       <h1>Websocket Demo</h1>
-      <div>
-        <input type="text" id="ws_url_textedit"/>
+      <div class="d-flex flex-row w-100">
+        <div class="flex-1" style="margin-right: 1px">
+          <input class="w-100" type="text" id="ws_url_textedit"/>
+        </div>
         <button id="ws_button">Connect</button>
       </div>
-
-      <h3>DHT11 temperature humidity sensor</h3>
+      <hr>
+      <h2>DHT11 temperature humidity sensor</h2>
       <div>
         <button id="dht11_refresh">Refresh</button>
         <table>
@@ -33,8 +35,8 @@
           </tr>
         </table>
       </div>
-
-      <h3>LED controls</h3>
+      <hr>
+      <h2>LED controls</h2>
       <div>
         <button id="led_get_all">Get All</button>
         <button id="led_set_all">Set All</button>
@@ -45,9 +47,9 @@
           </tr>
         </table> 
       </div>
-
-      <h3>PC Controls</h3>
-      </div>
+      <hr>
+      <h2>PC Controls</h2>
+      <div>
         <button id="pc_reset">Reset</button>
         <button id="pc_power_on">Power on</button>
         <button id="pc_power_off">Power off</button>

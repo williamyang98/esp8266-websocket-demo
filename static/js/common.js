@@ -1,6 +1,12 @@
 let DEFAULT_HOST_URL = document.location.host;
-if (DEFAULT_HOST_URL.startsWith("localhost")) {
-    DEFAULT_HOST_URL = "192.168.1.114:80";
+// If we are serving webpage locally use the ESP8266's ip address
+const LOCALHOST_URLS = [ "localhost", "127.0.0.1", "0.0.0.0" ];
+for (const url of LOCALHOST_URLS) {
+    if (DEFAULT_HOST_URL.startsWith(url)) {
+        DEFAULT_HOST_URL = "192.168.1.114:80";
+        console.log(`Detected demo is being served locally, overriding with ESP8266 ip address`);
+        break;
+    }
 }
 let DEFAULT_WS_URL = `ws://${DEFAULT_HOST_URL}/api/v1/websocket`;
 
@@ -67,10 +73,12 @@ let bind_dht11 = (app) => {
             refresh_dht11_data();
         }
     });
-
-    setInterval(() => {
-        refresh_dht11_data();
-    }, 1000);
+    
+    // TODO: Rate limit this on the esp8266 server
+    //       Avoid polling DHT11 excessively
+    // setInterval(() => {
+    //     refresh_dht11_data();
+    // }, 1000);
 }
 
 let bind_led_controls = (app) => {

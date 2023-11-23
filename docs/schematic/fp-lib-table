@@ -1,3 +1,0 @@
-(fp_lib_table
-  (lib (name LEDController)(type KiCad)(uri ${KIPRJMOD}/LEDController.pretty)(options "")(descr ""))
-)

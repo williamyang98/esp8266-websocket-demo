@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Usage: bash // This spawns a new shell so we can exit back to original shell
 #        source setup_esp8266_environment.sh
 echo "Setting up ESP8266-RTOS-SDK"

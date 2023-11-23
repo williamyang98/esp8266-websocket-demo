@@ -1,2 +1,3 @@
 #!/bin/sh
-python $IDF_PATH/tools/idf_monitor.py --port $ESPPORT --baud 115200 ./build/hello-world.elf
+APP_NAME=websocket-demo
+python $IDF_PATH/tools/idf_monitor.py --port $ESPPORT --baud 115200 ./build/$APP_NAME.elf

@@ -12,7 +12,7 @@
 ## Building binaries
 1. ```bash```
 2. ```source ./scripts/init_env.sh```
-3. ```python ./scripts/generate_webpages.py```
+3. ```python ./scripts/create_server_files.py```
 4. ```./scripts/cmake_configure.sh```
 5. ```ninja -C build```
 
@@ -23,7 +23,7 @@ If changes are made to webpage files in ```./static```, then run ```python ./scr
 2. Set environment variables.
 - ```export ESPPORT=/dev/tty??```
 3. Hold flash button on ESP8266-12E board while running flash command.
-- ```ninja -C build flash```
+- ```./scripts/flash.sh```
 4. Running serial monitor.
 - ```./scripts/serial_monitor.sh```
 
@@ -34,3 +34,5 @@ To avoid reflashing while modifying the webpage run the website locally.
 ## Additional notes
 - ```cryptography``` library in python may not install correctly on msys2. Just comment it out in ```vendor/esp8266-rtos-sdk/requirements.txt```.
 
+## Editing sdkconfig
+To edit ```./sdkconfig``` more conveniently use ```ninja -C build menuconfig``` which uses Kconfig. 

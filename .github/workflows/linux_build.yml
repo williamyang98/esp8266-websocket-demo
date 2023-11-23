@@ -1,0 +1,63 @@
+name: linux-build 
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+      with: 
+        submodules: recursive 
+      
+    - name: Install packages
+      run: |
+        sudo apt-get update 
+        sudo apt-get --yes install cmake ninja-build
+    
+    - name: Install xtensa toolchain
+      run: ./scripts/install_xtensa_toolchain.sh
+
+    - name: Create python virtual environment
+      run: python -m venv venv
+
+    - name: Install python packages
+      run: |
+        source ./scripts/init_env.sh
+        pip install -r vendor/esp8266-rtos-sdk/requirements.txt
+
+    - name: Create server files
+      run: |
+        source ./scripts/init_env.sh
+        python ./scripts/create_server_files.py
+
+    - name: Create spiff partition filesystem image
+      run: |
+        source ./scripts/init_env.sh
+        ./scripts/create_spiffs_image.sh
+
+    - name: Create dummy wifi credentials
+      run: printf "#pragma once\n#define WIFI_SSID \"example_ssid\"\n#define WIFI_PASS \"example_pass\"\n" > ./main/wifi_sta_config.h
+
+    - name: Configure cmake
+      run: |
+        source ./scripts/init_env.sh
+        ./scripts/cmake_configure.sh
+
+    - name: Build binaries
+      run: |
+        source ./scripts/init_env.sh
+        ninja -C build
+
+    - name: Create build artifact
+      run: ./scripts/create_build_artifact.sh
+    
+    - name: Upload build artifact 
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifact
+        path: ${{github.workspace}}/build-artifact

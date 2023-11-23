@@ -22,3 +22,6 @@ python.stackdump
 
 # downloaded toolchain
 vendor/xtensa-lx106-elf/
+
+# generated artifacts during build
+spiffs_filesystem_partition.bin

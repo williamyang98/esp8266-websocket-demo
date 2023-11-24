@@ -19,7 +19,7 @@ def fetch_files(root_path):
     files = []
     for filepath in get_paths(root_path):
         with open(filepath, "rb") as fp:
-            static_filepath = os.path.relpath(filepath, root_path)
+            static_filepath = os.path.relpath(filepath, root_path).replace("\\", "/")
             files.append((static_filepath, fp.read()))
     files = sorted(files, key=lambda x: x[0])
     return files

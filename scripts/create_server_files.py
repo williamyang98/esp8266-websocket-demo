@@ -1,6 +1,8 @@
 import argparse
 import os
 import string
+import collections
+import hashlib
 
 def get_paths(root_path):
     for filename in os.listdir(root_path):
@@ -39,6 +41,7 @@ def get_mime_type_index(filepath):
     ext = ext[1:]
     return MIME_TYPE_INDEX_MAPPING.get(ext, 0)
 
+FileEntry = collections.namedtuple("FileEntry", ["filepath", "offset", "size", "mime_type_index", "sha1_hash"])
 def combine_files(files):
     combined_data = bytearray([])
     file_entries = []
@@ -46,7 +49,8 @@ def combine_files(files):
     for filepath, data in files:
         total_bytes = len(data)
         mime_type_index = get_mime_type_index(filepath)
-        file_entries.append((filepath, curr_offset_byte, total_bytes, mime_type_index))
+        sha1_hash = hashlib.sha1(data).hexdigest()
+        file_entries.append(FileEntry(filepath, curr_offset_byte, total_bytes, mime_type_index, sha1_hash))
         combined_data.extend(data)
         curr_offset_byte += total_bytes
         # add extra null terminator
@@ -56,8 +60,7 @@ def combine_files(files):
 
 def find_file_entry(file_entries, name):
     for entry in file_entries:
-        filename = entry[0]
-        if filename == name:
+        if entry.filepath == name:
             return entry
     return None
 
@@ -73,8 +76,15 @@ def main():
     # redirect "" to "index.html"
     index_html_entry = find_file_entry(file_entries, "index.html")
     if not index_html_entry is None:
-        _, offset, length, mime_type_index = index_html_entry
-        file_entries.append(("", offset, length, mime_type_index))
+        kwargs = index_html_entry._asdict();
+        kwargs["filepath"] = ""
+        root_entry = FileEntry(**kwargs)
+        file_entries.append(root_entry)
+    
+    print(f"Adding {len(file_entries)} files")
+    for entry in file_entries:
+        mime_type = MIME_TYPES[entry.mime_type_index]
+        print(f"  filepath='/{entry.filepath}',offset={entry.offset},size={entry.size},mime_type='{mime_type[0]}',sha1='{entry.sha1_hash}'")
 
     with open(os.path.join(args.output, "src/files_data.h"), "w+") as fp:
         fp.write("// THIS IS AUTOMATICALLY GENERATED. DO NOT EDIT\n\n")
@@ -89,6 +99,7 @@ def main():
                  "  size_t offset;\n"
                  "  size_t length;\n"
                  "  size_t mime_type_index;\n"
+                 "  const char *sha1_hash;\n"
                  "} file_entry_t;\n\n")
         fp.write("const file_entry_t* get_array_file_entries(void);\n") 
         fp.write("const uint8_t* get_files_data(void);\n")
@@ -104,9 +115,8 @@ def main():
         mime_types_string = ','.join(map(lambda x: f'"{x[1]}"', MIME_TYPES))
         fp.write(f'static const char* mime_types[{len(MIME_TYPES)}] = {{{mime_types_string}}};\n')
 
-        def file_entry_to_string(entry):
-            filepath, offset, length, mime_type_index = entry
-            return f'{{"/{filepath}",{offset},{length},{mime_type_index}}}'
+        def file_entry_to_string(e):
+            return f'{{"/{e.filepath}",{e.offset},{e.size},{e.mime_type_index},"{e.sha1_hash}"}}'
 
         file_entries_string = ',\n '.join(map(file_entry_to_string, file_entries))
         fp.write(f'static const file_entry_t file_entries[{len(file_entries)}] = {{\n {file_entries_string}\n}};\n')

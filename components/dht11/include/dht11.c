@@ -53,17 +53,17 @@ esp_err_t IRAM_ATTR dht11_read_data(dht11_sensor_t *s) {
     gpio_set_level(pin_number, 1);
 
     // wait for pull down response after 20 to 40 us
-    if (!dht11_wait_signal(pin_number, 60, 0)) {
+    if (dht11_wait_signal(pin_number, 60, 0) < 0) {
         ESP_LOGE(TAG, "start timeout on pull down #1");
         return ESP_FAIL;
     }
     // wait for pull up after 80us
-    if (!dht11_wait_signal(pin_number, 100, 1)) {
+    if (dht11_wait_signal(pin_number, 100, 1) < 0) {
         ESP_LOGE(TAG, "start timeout on pull up");
         return ESP_FAIL;
     }
     // pulls down after 80us
-    if (!dht11_wait_signal(pin_number, 100, 0)) {
+    if (dht11_wait_signal(pin_number, 100, 0) < 0) {
         ESP_LOGE(TAG, "start timeout on pull down #2");
         return ESP_FAIL;
     }
@@ -75,31 +75,35 @@ esp_err_t IRAM_ATTR dht11_read_data(dht11_sensor_t *s) {
     // 70us means 1
     for (int current_byte = 0; current_byte < TOTAL_DATA_LENGTH; current_byte++) {
         buffer[current_byte] = 0x00;
-        for (int i = 0; i < 8; i++) {
+        for (int current_bit = 0; current_bit < 8; current_bit++) {
             // 50us pulldown
-            if (!dht11_wait_signal(pin_number, 70, 1)) {
-                ESP_LOGE(TAG, "timeout pulldown on byte %d bit %d", current_byte, i);
+            if (dht11_wait_signal(pin_number, 70, 1) < 0) {
+                ESP_LOGE(TAG, "timeout pulldown on byte %d bit %d", current_byte, current_bit);
                 return ESP_FAIL;
             }
             // read pull up length
             int32_t duration = dht11_wait_signal(pin_number, 80, 0); 
-            if (!duration) {
-                ESP_LOGE(TAG, "timeout pullup on byte %d bit %d", current_byte, i);
+            if (duration < 0) {
+                ESP_LOGE(TAG, "timeout pullup on byte %d bit %d", current_byte, current_bit);
                 return ESP_FAIL;
             }
 
             if (duration <= 10 || duration > 80) {
-                ESP_LOGE(TAG, "invalid pullup duration %d", duration);
+                ESP_LOGE(TAG, "invalid pullup on byte %d bit %d. duration=%d", current_byte, current_bit, duration);
                 return ESP_FAIL;
             }
 
-            if (duration <= 30) buffer[current_byte] &= ~(1 << (7-i));
-            else                buffer[current_byte] |= (1 << (7-i));
+            if (duration <= 30) {
+                // Byte is already zeroed out at start
+                // buffer[current_byte] &= ~(1 << (7-current_bit));
+            } else {
+                buffer[current_byte] |= (1 << (7-current_bit));
+            }
         }
     }
 
     // confirm checksum
-    uint8_t checksum = (buffer[0] + buffer[1] + buffer[2] + buffer[3]) & 0xFF;
+    const uint8_t checksum = (buffer[0] + buffer[1] + buffer[2] + buffer[3]) & 0xFF;
     if (checksum != buffer[4]) {
         ESP_LOGE(TAG, "failed checksum 0x%x != 0x%x, calculated != expected", checksum, buffer[4]);
         ESP_LOGE(TAG, "buffer contents are: %d, %d, %d, %d, %d", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);

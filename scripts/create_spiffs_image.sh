@@ -3,8 +3,8 @@ INPUT_DIR="./static"
 OUTPUT_FILE="./spiffs_filesystem_partition.bin"
 
 # NOTE: This must be identical to the size specified in ./partitions.csv
-# 1M = 1024K = 1048576
-PARTITION_SIZE=1048576
+# 1M = 128K = 131072
+PARTITION_SIZE=131072
 
 
 # NOTE: For the correct arguments refer to CONFIG_SPIFFS_* variables in ./sdkconfig

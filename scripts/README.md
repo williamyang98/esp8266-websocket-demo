@@ -22,7 +22,7 @@ If changes are made to webpage files in ```./static```, then run ```python ./scr
 1. Determine serial port from ```/dev/tty??```.
 2. Set environment variables.
 - ```export ESPPORT=/dev/tty??```
-3. Hold flash button on ESP8266-12E board while running flash command.
+3. Connect GPIO-0 pin to ground via a resistor on ESP-01 board while running flash command.
 - ```./scripts/flash.sh```
 4. Running serial monitor.
 - ```./scripts/serial_monitor.sh```

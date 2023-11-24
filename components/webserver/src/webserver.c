@@ -7,15 +7,12 @@
 #include <esp_log.h>
 
 #include <string.h>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #define TAG "webserver"
-
-#define MAIN_JS_ID 1
-#define INDEX_JS_ID 2
-#define CHUNK_JS_ID 3
+#define MAX_ETAG_LENGTH 64 // sha_1 hexdigest is 40 hexadecimal digits
+static char TEMP_ETAG_READ_BUFFER[MAX_ETAG_LENGTH+1] = {0};
 
 static esp_err_t create_endpoints(void);
 static esp_err_t send_file(httpd_req_t *request);
@@ -47,8 +44,8 @@ static esp_err_t create_endpoints(void) {
         endpoints[i] = endpoint;
 
         const char *mime_type = mime_types[entry->mime_type_index];
-        ESP_LOGI(TAG, "created endpoint: path='%s', offset=%u, length=%u, mime_type=%s", 
-            entry->name, entry->offset, entry->length, mime_type);
+        ESP_LOGI(TAG, "created endpoint: path='%s', offset=%u, length=%u, mime_type=%s, sha1_hash=%s",
+            entry->name, entry->offset, entry->length, mime_type, entry->sha1_hash);
     }
     ESP_LOGI(TAG, "total_combined_size is %u bytes", TOTAL_BYTES_IN_COMBINED_DATA);
     return ESP_OK;
@@ -87,8 +84,31 @@ esp_err_t send_file(httpd_req_t *request) {
     const uint8_t *data = get_files_data();
     const uint8_t *uri_data = &data[file_entry->offset];
     const char *mime_type = mime_types[file_entry->mime_type_index];
-
+    
+    // SOURCE: https://devdojo.com/vnnvanhuong/demo-http-caching-with-etag
+    // Support file caching
+    bool is_cache = false;
+    const esp_err_t etag_status = httpd_req_get_hdr_value_str(request, "If-None-Match", TEMP_ETAG_READ_BUFFER, MAX_ETAG_LENGTH);
+    if (etag_status == ESP_OK) {
+        if (strncmp(file_entry->sha1_hash, TEMP_ETAG_READ_BUFFER, MAX_ETAG_LENGTH) == 0) {
+            is_cache = true;
+        } else {
+            is_cache = false;
+            ESP_LOGI(TAG, "cache miss: rx_sha1='%s', stored_sha1='%s', uri='%s'", TEMP_ETAG_READ_BUFFER, file_entry->sha1_hash, file_entry->name);
+        }
+    } else if (etag_status != ESP_ERR_NOT_FOUND) {
+        ESP_LOGE(TAG, "request contained malformed 'If-None-Match' etag (%s), uri='%s'", esp_err_to_name(etag_status), file_entry->name);
+    }
+    
+    httpd_resp_set_hdr(request, "ETag", file_entry->sha1_hash);
+    // cache for 1 week, always check if etag matches
+    httpd_resp_set_hdr(request, "Cache-Control", "max-age=604800, public, no-cache");
     httpd_resp_set_type(request, mime_type);
-    httpd_resp_send(request, (const char*)(uri_data), file_entry->length);
+    if (is_cache) {
+        httpd_resp_set_status(request, "304 Not Modified");
+        httpd_resp_send(request, "", 0);
+    } else {
+        httpd_resp_send(request, (const char*)(uri_data), file_entry->length);
+    }
     return ESP_OK;
 }

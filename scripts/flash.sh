@@ -14,5 +14,4 @@ python $IDF_PATH/components/esptool_py/esptool/esptool.py\
  write_flash --flash_mode dout --flash_freq 40m --flash_size $FLASH_SIZE\
  0x0 "$BUILD_DIR/bootloader/bootloader.bin"\
  0x8000 "$BUILD_DIR/partition_table/partition-table.bin"\
- 0x10000 "$BUILD_DIR/$APP_NAME.bin"\
- 0xb0000 "$SPIFFS_PARTITION"
+ 0x10000 "$BUILD_DIR/$APP_NAME.bin"

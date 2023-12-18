@@ -9,6 +9,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+#include <freertos/timers.h>
 
 #define TAG "pc-io-interrupt"
 #define LL_TAG "pc-io-linked-list"

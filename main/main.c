@@ -65,13 +65,10 @@ void app_main()
 
     pc_io_init();
     pc_io_interrupt_init();
-    for (int i = 0; i < 8; i++) {
-        set_pwm_value(i, 0);
-    }
     ESP_LOGI(INIT_TAG, "initialised pc io gpio and interrupts");
 
     init_nvs(); 
-    init_spiffs();
+    // init_spiffs();
     wifi_init_sta();
     init_server();
 

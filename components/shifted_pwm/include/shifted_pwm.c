@@ -1,22 +1,35 @@
 #include "shifted_pwm.h"
 
 #include <stdbool.h>
-#include "driver/gpio.h"
-#include "driver/spi.h"
-#include "driver/hw_timer.h"
-
-#include "FreeRTOS.h"
-#include "freertos/portmacro.h"
-#include "freertos/task.h"
-
 #include <stdio.h>
+#include <FreeRTOS.h>
+#include <driver/gpio.h>
+#include <driver/hw_timer.h>
+#include <driver/spi.h>
+#include <esp_err.h>
+#include <esp_log.h>
+#include <freertos/portmacro.h>
+#include <freertos/task.h>
+#include <freertos/timers.h>
+#include <nvs_flash.h>
+
+#define TAG "shifted_pwm"
+#define NVS_KEY "pwm_values"
+#define NVS_NAMESPACE "shifted_pwm"
+static nvs_handle_t pwm_nvs_handle = 0;
 
 static uint8_t pwm_values[MAX_PWM_PINS] = {0, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t current_cycle = 0;
 static uint32_t current_value = 0x0000; // cast 32bit for performance?
 static spi_trans_t transmission_params = {0};
 
+// Task that checks for saving pwm values
+static bool is_values_changed = false;
+static TimerHandle_t timer_save_values = NULL;
+
+esp_err_t init_nvs_autosave();
 void shifted_pwm_update(void *ignore);
+void task_save_values(TimerHandle_t handle);
 
 void shifted_pwm_init() {
     spi_config_t spi_config;
@@ -45,7 +58,6 @@ void shifted_pwm_init() {
 
     transmission_params.mosi = &current_value;
     transmission_params.bits.mosi = 8;
-    
 
     hw_timer_init(shifted_pwm_update, NULL);
     hw_timer_set_clkdiv(TIMER_CLKDIV_1);
@@ -54,6 +66,48 @@ void shifted_pwm_init() {
     hw_timer_set_load_data(5000);
     hw_timer_enable(true);
     // hw_timer_alarm_us(51, true);
+
+    if (init_nvs_autosave() != ESP_OK) {
+        ESP_LOGE(TAG, "failed to start nvs autosave correctly");
+    }
+}
+
+esp_err_t init_nvs_autosave() {
+    const esp_err_t nvs_open_status = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &pwm_nvs_handle);
+    if (nvs_open_status != ESP_OK) {
+        ESP_LOGE(TAG, "failed to open nvs with namespace %s (%s)", NVS_NAMESPACE, esp_err_to_name(nvs_open_status));
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "opened nvs namespace %s", NVS_NAMESPACE);
+
+    // each pwm pin takes up 1 byte 
+    size_t total_pwm_values = MAX_PWM_PINS;
+    const esp_err_t init_nvs_load_status = nvs_get_blob(pwm_nvs_handle, NVS_KEY, (void*)pwm_values, &total_pwm_values);
+    if (init_nvs_load_status != ESP_OK) {
+        ESP_LOGE(TAG, "failed to load pwm values from nvs (%s)", esp_err_to_name(init_nvs_load_status));
+        is_values_changed = true;
+    } else if (total_pwm_values != MAX_PWM_PINS) {
+        ESP_LOGE(TAG, "mismatching number of pwm values. got %u expected %u", total_pwm_values, MAX_PWM_PINS);
+        is_values_changed = true;
+    } else {
+        ESP_LOGI(TAG, "loaded pwm %u values from nvs", total_pwm_values);
+        is_values_changed = false;
+    }
+
+    const size_t AUTOSAVE_PERIOD_MS = 1000;
+    timer_save_values = xTimerCreate(
+        "pwm_values_save", 
+        AUTOSAVE_PERIOD_MS / portTICK_RATE_MS, 
+        pdTRUE, 
+        NULL, 
+        task_save_values
+    );
+    if (xTimerStart(timer_save_values, 0) == pdFAIL) {
+        ESP_LOGE(TAG, "failed to start nvs autosave task");
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "started nvs save task every %d ms", AUTOSAVE_PERIOD_MS);
+    return ESP_OK;
 }
 
 void shifted_pwm_update(void *ignore) {
@@ -91,5 +145,16 @@ void set_pwm_value(uint8_t pin, uint8_t value) {
         value = MAX_PWM_CYCLES;
     }
     pwm_values[pin] = value;
+    is_values_changed = true;
 }
 
+void task_save_values(TimerHandle_t handle) {
+    if (!is_values_changed) {
+        return;
+    }
+    is_values_changed = false;
+    const esp_err_t nvs_save_status = nvs_set_blob(pwm_nvs_handle, NVS_KEY, (const void*)pwm_values, sizeof(pwm_values));
+    if (nvs_save_status != ESP_OK) {
+        ESP_LOGE(TAG, "failed to save pwm values to nvs (%s)", esp_err_to_name(nvs_save_status));
+    }
+}

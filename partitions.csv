@@ -5,4 +5,3 @@ nvs,      data, nvs,     0x9000,  0x6000,
 phy_init, data, phy,     0xf000,  0x1000,
 # NOTE: ESP-01 board only has 1MB of flash memory so we need to resize factory (app binary) and storage partitions to fit 
 factory,  app,  factory, 0x10000, 640K,
-storage,  data, spiffs,  0xb0000, 128K, 

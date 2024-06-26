@@ -36,3 +36,13 @@ To avoid reflashing while modifying the webpage run the website locally.
 
 ## Editing sdkconfig
 To edit ```./sdkconfig``` more conveniently use ```ninja -C build menuconfig``` which uses Kconfig. 
+## Plotting data
+- ```read_measurements.py``` to read values from websocket
+- ```plot_measurements.py``` to plot values as graph
+    - Close window to re-render the graph
+    - Use ```CTRL-C``` in terminal to close graph
+
+## Pinout
+- ADC0 for analog reading
+- GPIO2/D4 for DHT11 sensor
+

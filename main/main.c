@@ -16,6 +16,7 @@
 #include <esp_spi_flash.h>
 #include <esp_spiffs.h>
 #include <esp_system.h>
+#include <driver/adc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,9 +25,6 @@
 
 #include "dht11.h"
 #include "global_periphs.h"
-#include "pc_io.h"
-#include "pc_io_interrupt.h"
-#include "shifted_pwm.h"
 
 #include "webserver.h"
 #include "websocket_handler.h"
@@ -60,14 +58,19 @@ void app_main()
         ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_sensor.pin_number);
     }
 
-    shifted_pwm_init();
-    ESP_LOGI(INIT_TAG, "initialised led gpio");
 
-    pc_io_init();
-    pc_io_interrupt_init();
-    ESP_LOGI(INIT_TAG, "initialised pc io gpio and interrupts");
+    const adc_config_t adc_config = {
+        .mode = ADC_READ_TOUT_MODE,
+        .clk_div = 32, // 80MHz/32 = 2.5MHz
+    };
+    const esp_err_t adc_init_status = adc_init(&adc_config);
+    if (adc_init_status == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "initialised adc");
+    } else {
+        ESP_LOGE(INIT_TAG, "failed to initialize adc (%s)", esp_err_to_name(adc_init_status));
+    }
 
-    init_nvs(); 
+    init_nvs();
     // init_spiffs();
     wifi_init_sta();
     init_server();

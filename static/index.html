@@ -36,25 +36,19 @@
         </table>
       </div>
       <hr>
-      <h2>LED controls</h2>
+      <h2>ADC</h2>
       <div>
-        <button id="led_get_all">Get All</button>
-        <button id="led_set_all">Set All</button>
-        <table id="led_controls">
+        <button id="adc_refresh">Refresh</button>
+        <table>
           <tr>
-            <th>LED</th>
             <th>Value</th>
+            <th>Status</th>
           </tr>
-        </table> 
-      </div>
-      <hr>
-      <h2>PC Controls</h2>
-      <div>
-        <button id="pc_reset">Reset</button>
-        <button id="pc_power_on">Power on</button>
-        <button id="pc_power_off">Power off</button>
-        <button id="pc_get_status">Get status</button>
-        <div id="pc_status">Status: ?</div>
+          <tr>
+            <td id="adc_value">?</td>
+            <td id="adc_status">?</td>
+          </tr>
+        </table>
       </div>
 
     </div>

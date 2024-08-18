@@ -12,6 +12,21 @@ table {
   border-collapse: collapse;
 }
 
+/* Custom */
+#pc_power_on {
+  text-align: center;
+  width: 100%;
+  font-size: 60px !important;
+}
+
+#pc_power_on.inactive {
+  color: #d41515;
+}
+
+#pc_power_on.active {
+  color: #15d43b;
+}
+
 /* Helpers */
 .container {
   margin: 25px;
@@ -158,3 +173,4 @@ table {
 .text-right {
   text-align: right;
 }
+

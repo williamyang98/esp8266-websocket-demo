@@ -30,6 +30,7 @@ MIME_TYPES = [
     ("html", "text/html"),
     ("css", "text/css"),
     ("ico", "image/x-icon"),
+    ("svg", "image/svg"),
 ]
 MIME_TYPE_INDEX_MAPPING = {k:i for i,(k,_) in enumerate(MIME_TYPES)}
 

@@ -22,12 +22,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "dht11.h"
-#include "global_periphs.h"
 #include "pc_io.h"
-#include "pc_io_interrupt.h"
-#include "shifted_pwm.h"
-
 #include "webserver.h"
 #include "websocket_handler.h"
 #include "wifi_sta.h"
@@ -54,18 +49,8 @@ void app_main()
 {
     ESP_LOGI(INIT_TAG, "entering main function!");
 
-    if (dht11_init(&dht11_sensor) == ESP_OK) {
-        ESP_LOGI(INIT_TAG, "initialised dht11 sensor on pin: %u", dht11_sensor.pin_number);
-    } else {
-        ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_sensor.pin_number);
-    }
-
-    shifted_pwm_init();
-    ESP_LOGI(INIT_TAG, "initialised led gpio");
-
     pc_io_init();
-    pc_io_interrupt_init();
-    ESP_LOGI(INIT_TAG, "initialised pc io gpio and interrupts");
+    ESP_LOGI(INIT_TAG, "initialised pc io gpio");
 
     init_nvs(); 
     // init_spiffs();

@@ -8,15 +8,20 @@
 - ```source ./venv/bin/activate``` or ```source ./venv/Scripts/activate``` depending on OS.
 - ```SETUPTOOLS_USE_DISTUTILS=stdlib pip install -r vendor/esp8266-rtos-sdk/requirements.txt``` 
     - [fix_1](https://stackoverflow.com/a/76882830)
+    - ```cryptography``` library in python may not install correctly on msys2. Just comment it out in ```vendor/esp8266-rtos-sdk/requirements.txt```.
+    - You need to comment it out in ```vendor/esp8266-rtos-sdk/requirements.txt``` because a python script called by their cmake configure setup checks if the requirements are installed
+    - If you just avoid installing the cryptography module cmake configure fails with a message about missing python dependencies
 
 ## Building binaries
 1. ```bash```
 2. ```source ./scripts/init_env.sh```
 3. ```python ./scripts/create_server_files.py```
-4. ```./scripts/cmake_configure.sh```
-5. ```ninja -C build```
+4. ```./scripts/create_spiffs_image.sh```
+5. ```./scripts/cmake_configure.sh```
+6. Create wifi credentials file: ```printf "#pragma once\n#define WIFI_SSID \"example_ssid\"\n#define WIFI_PASS \"example_pass\"\n" > ./main/wifi_sta_config.h```
+7. ```cmake --build build```
 
-If changes are made to webpage files in ```./static```, then run ```python ./scripts/generate_webpages.py``` again.
+If changes are made to webpage files in ```./static``` then run ```python ./scripts/create_server_files.py``` again.
 
 ## Flashing
 1. Determine serial port from ```/dev/tty??```.
@@ -31,8 +36,6 @@ If changes are made to webpage files in ```./static```, then run ```python ./scr
 To avoid reflashing while modifying the webpage run the website locally.
 - ```./scripts/serve_local_website.sh```
 
-## Additional notes
-- ```cryptography``` library in python may not install correctly on msys2. Just comment it out in ```vendor/esp8266-rtos-sdk/requirements.txt```.
 
 ## Editing sdkconfig
 To edit ```./sdkconfig``` more conveniently use ```ninja -C build menuconfig``` which uses Kconfig. 

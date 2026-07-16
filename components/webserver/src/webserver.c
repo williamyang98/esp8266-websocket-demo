@@ -253,12 +253,12 @@ static esp_err_t add_endpoints(httpd_handle_t server) {
                     "registered endpoint: uri='%s', size=%u, mimetype=%s, sha1_hash=%s",
                     uri_handler.uri, endpoint->file_size, endpoint->mimetype, endpoint->sha1_hash
                 );
+                total_registered_endpoints++;
             } else {
                 ESP_LOGE(TAG,
                     "failed to register endpoint: uri='%s', size=%u, mimetype=%s, sha1_hash=%s, error=%s",
                     uri_handler.uri, endpoint->file_size, endpoint->mimetype, endpoint->sha1_hash, esp_err_to_name(status)
                 );
-                total_registered_endpoints++;
             }
         }
         const bool is_index_file = strncmp(endpoint->filepath, INDEX_FILEPATH, sizeof(INDEX_FILEPATH)) == 0;

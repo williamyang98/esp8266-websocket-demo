@@ -1,6 +1,6 @@
 ## Pre-requisites
 1. Download msys2 and use MSYS environment (not mingw64, mingw32, ...) or use WSL.
-2. Download RTOS SDK when cloning this repo recursively.
+2. Download RTOS SDK by cloning this repo recursively: ```git clone <URL> --recurse-submodules``` or afterwards with ```git submodule update --init --recursive```
 3. Install xtensa toolchain.
 - ```./scripts/install_xtensa_toolchain.sh```.
 4. Setup RTOS SDK python environment

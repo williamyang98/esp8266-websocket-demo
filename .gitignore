@@ -24,4 +24,5 @@ python.stackdump
 vendor/xtensa-lx106-elf/
 
 # generated artifacts during build
+static/server_files.csv
 spiffs_filesystem_partition.bin

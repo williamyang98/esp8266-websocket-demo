@@ -14,28 +14,34 @@
 
 ## Programming
 ### 1. Building binaries
-1. ```bash```
-2. ```source ./scripts/init_env.sh```
-3. ```python ./scripts/create_server_files.py```
-4. ```./scripts/create_spiffs_image.sh```
-5. ```./scripts/cmake_configure.sh```
-6. Create wifi credentials file: ```printf "#pragma once\n#define WIFI_SSID \"example_ssid\"\n#define WIFI_PASS \"example_pass\"\n" > ./main/wifi_sta_config.h```
-7. ```cmake --build build```
+1. Start development shell: ```bash```
+2. Initialise ESP environment: ```source ./scripts/init_env.sh```
+3. Configure cmake: ```./scripts/cmake_configure.sh```
+4. Create wifi credentials file: ```printf "#pragma once\n#define WIFI_SSID \"example_ssid\"\n#define WIFI_PASS \"example_pass\"\n" > ./main/wifi_sta_config.h```
+5. Build program binary: ```cmake --build build```
 
-If changes are made to webpage files in ```./static``` then run ```python ./scripts/create_server_files.py``` again.
-
-### 2. Flashing
+### 2. Flashing program
 1. Determine serial port from ```/dev/tty??```.
 2. Set COM port variable: ```export ESPPORT=/dev/tty??```
-3. Hold flash button on ESP8266-12E board while running flash command: ```./scripts/flash.sh```
-4. Running serial monitor: ```./scripts/serial_monitor.sh```
+3. Build program: ```cmake --build build```
+4. Hold flash button on ESP8266-12E board while flashing binaries
+5. Flash program: ```./scripts/flash_program.sh```
+6. Running serial monitor: ```./scripts/serial_monitor.sh```
 
-### 3. Additional scripts
+### 3. Flashing static webserver files
+1. Determine serial port from ```/dev/tty??```.
+2. Set COM port variable: ```export ESPPORT=/dev/tty??```
+3. Indexing webserver files and creating spiffs partition: ```./scripts/create_server_files.sh```
+4. Hold flash button on ESP8266-12E board while flashing binaries
+5. Flash spiffs partition with static webserver files: ```./scripts/flash_server_files.sh```
+6. Rerun steps 3 to 5 whenever you want to update the static webserver files in the SPIFFS partition
+
+### 4. Additional scripts
 - To avoid reflashing while modifying the webpage run the website locally: ```./scripts/serve_local_website.sh```
 - To edit ```./sdkconfig``` more conveniently via a terminal UI: ```cmake --build build --target menuconfig```
 
 ## Sharing USB COM ports with WSL2
-### 1. instructions
+### 1. Instructions
 1. Install usbipd and restart computer (powershell+admin): ```winget install usbipd```
 2. List devices: ```usbipd list```
     - For the common ```CH340``` USB to UART bridge IC it shares the same hardware id ```<VID:PID>```

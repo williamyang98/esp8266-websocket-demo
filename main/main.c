@@ -17,11 +17,6 @@
 #include <esp_spiffs.h>
 #include <esp_system.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <sys/stat.h>
-
 #include "dht11.h"
 #include "global_periphs.h"
 #include "pc_io.h"
@@ -47,7 +42,6 @@ static httpd_uri_t websocket_uri = {
 };
 
 static esp_err_t init_nvs(void);
-static esp_err_t init_spiffs(void);
 static esp_err_t init_server(void);
 
 void app_main()
@@ -70,8 +64,7 @@ void app_main()
     }
     ESP_LOGI(INIT_TAG, "initialised pc io gpio and interrupts");
 
-    init_nvs(); 
-    init_spiffs();
+    init_nvs();
     wifi_init_sta();
     init_server();
 
@@ -79,67 +72,6 @@ void app_main()
     // ESP_LOGI(INIT_TAG, "starting task scheduler!");
 
     ESP_LOGI(INIT_TAG, "finished initialisation");
-}
-
-esp_err_t init_spiffs(void) {
-    esp_vfs_spiffs_conf_t spiffs_config = {
-      .base_path = "/spiffs",
-      .partition_label = NULL,
-      .max_files = 5,
-      .format_if_mount_failed = true,
-    };
-    // Use settings defined above to initialize and mount SPIFFS filesystem.
-    // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
-    const esp_err_t spiffs_register_status = esp_vfs_spiffs_register(&spiffs_config);
-    switch (spiffs_register_status) {
-    case ESP_OK:   
-        ESP_LOGI(INIT_TAG, "initialising spiffs filesystem"); 
-        break;
-    case ESP_FAIL: 
-        ESP_LOGE(INIT_TAG, "failed to mount or format spiffs filesystem"); 
-        break;
-    case ESP_ERR_NOT_FOUND: 
-        ESP_LOGE(INIT_TAG, "failed to find spiffs partition");
-        break;
-    default:
-        ESP_LOGE(INIT_TAG, "failed to initialize spiffs (%s)", esp_err_to_name(spiffs_register_status));
-        break;
-    }
-    if (spiffs_register_status != ESP_OK) {
-        return ESP_FAIL;
-    }
-
-    size_t total = 0, used = 0;
-    const esp_err_t spiffs_info_status = esp_spiffs_info(NULL, &total, &used);
-    if (spiffs_info_status == ESP_OK) {
-        ESP_LOGI(INIT_TAG, "got spiffs partition size: total=%d, used=%d", total, used);
-    } else {
-        ESP_LOGE(INIT_TAG, "failed to get spiffs partition information (%s)", esp_err_to_name(spiffs_info_status));
-        return ESP_FAIL;
-    }
-
-    DIR *dir = opendir("/spiffs");
-    if (dir == NULL) {
-        ESP_LOGE(INIT_TAG, "failed to open '/spiffs' folder");
-        return ESP_FAIL;
-    }
-
-    ESP_LOGI(INIT_TAG, "listing spiffs files");
-    struct stat file_stat;
-    while (true) {
-        struct dirent *dir_entry = readdir(dir);
-        if (dir_entry == NULL) {
-            break;
-        }
-        if (stat(dir_entry->d_name, &file_stat) == -1) {
-            ESP_LOGI(INIT_TAG, "  name=%s (stat_failed)", dir_entry->d_name);
-            continue;
-        }
-        ESP_LOGI(INIT_TAG, "  name=%s, size=%ld", dir_entry->d_name, file_stat.st_size);
-    }
-    closedir(dir);
-
-    return ESP_OK;
 }
 
 esp_err_t init_server(void) {

@@ -1,5 +1,5 @@
-#ifndef __WEBSERVER_INIT_H__
-#define __WEBSERVER_INIT_H__
+#ifndef __WEBSERVER_H__
+#define __WEBSERVER_H__
 
 #include <httpd_server/esp_http_server.h>
 #include <esp_err.h>

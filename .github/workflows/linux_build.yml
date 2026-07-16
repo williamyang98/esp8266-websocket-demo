@@ -33,12 +33,7 @@ jobs:
     - name: Create server files
       run: |
         source ./scripts/init_env.sh
-        python ./scripts/create_server_files.py
-
-    - name: Create spiff partition filesystem image
-      run: |
-        source ./scripts/init_env.sh
-        ./scripts/create_spiffs_image.sh
+        ./scripts/create_server_files.sh
 
     - name: Create dummy wifi credentials
       run: printf "#pragma once\n#define WIFI_SSID \"example_ssid\"\n#define WIFI_PASS \"example_pass\"\n" > ./main/wifi_sta_config.h
@@ -51,7 +46,7 @@ jobs:
     - name: Build binaries
       run: |
         source ./scripts/init_env.sh
-        ninja -C build
+        cmake --build build
 
     - name: Create build artifact
       run: ./scripts/create_build_artifact.sh

@@ -37,7 +37,7 @@ static httpd_uri_t websocket_uri = {
     .handler = websocket_handler,
     .user_ctx = NULL,
     .is_websocket = true,
-    .handle_ws_control_frames = false, // let backend handle control frames
+    .handle_ws_control_frames = true,
     .supported_subprotocol = NULL,
 };
 

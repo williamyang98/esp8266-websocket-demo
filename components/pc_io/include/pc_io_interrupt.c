@@ -95,10 +95,9 @@ void receive_updates_task(void *arg) {
     bool curr_state = false;
     while (1) {
         if (xQueueReceive(state_event_queue, &curr_state, portMAX_DELAY)) {
-            if (curr_state == prev_state) {
-                continue;
-            }
+            const bool is_update = curr_state != prev_state;
             prev_state = curr_state;
+            if (!is_update) continue;
             // notify listeners
             list_node_t *head = listeners;
             while (head != NULL) {

@@ -61,7 +61,7 @@ esp_err_t pc_io_status_listen(pc_io_status_listener_t listener, void *args) {
     node->args = args;
     node->next = listeners;
     listeners = node;
-    ESP_LOGD(LL_TAG, "added listener");
+    ESP_LOGI(LL_TAG, "Added listener");
     return ESP_OK;
 }
 
@@ -76,11 +76,12 @@ esp_err_t pc_io_status_unlisten(pc_io_status_listener_t listener, void *args) {
         if ((node->listener == listener) && (node->args == args)) {
             *head = node->next;
             free(node);
-            ESP_LOGD(LL_TAG, "removed listener");
+            ESP_LOGI(LL_TAG, "Removed listener");
             return ESP_OK;
         }
         head = &(node->next);
     }
+    ESP_LOGE(LL_TAG, "Failed to remove listener since no match could be found");
     return ESP_FAIL;
 }
 

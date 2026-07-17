@@ -197,14 +197,19 @@ void IRAM_ATTR isr_enqueue_status_to_queue(void* _config) {
 void task_receive_status_from_queue(void* _config) {
     struct PC_IO_Config* config = (struct PC_IO_Config*)_config;
     assert(config != NULL);
+    bool prev_status = pc_io_is_powered(config);
     while (true) {
         bool status = false;
         if (!xQueueReceive(config->queue_status, &status, portMAX_DELAY)) continue;
+        const bool is_changed = prev_status != status;
+        prev_status = status;
         // notify all listeners
-        struct PC_IO_Status_Listeners* head = config->listeners_status;
-        while (head != NULL) {
-            head->listener(status, head->args);
-            head = head->next;
+        if (is_changed) {
+            struct PC_IO_Status_Listeners* head = config->listeners_status;
+            while (head != NULL) {
+                head->listener(status, head->args);
+                head = head->next;
+            }
         }
     }
 }

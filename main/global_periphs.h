@@ -1,10 +1,8 @@
-#pragma once
+#ifndef __GLOBAL_PERIPHERALS_H__
+#define __GLOBAL_PERIPHERALS_H__
 
-#include "dht11.h"
+#include <driver/gpio.h>
 
-static dht11_sensor_t dht11_sensor = {
-    .pin_number = 2,
-    .temperature = 0,
-    .humidity = 0,
-};
+static const gpio_num_t dht11_data_pin = 2;
 
+#endif

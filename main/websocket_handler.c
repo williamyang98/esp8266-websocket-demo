@@ -251,13 +251,14 @@ void handle_dht11(httpd_req_t *request, uint8_t *data, int length) {
 void async_send_dht11(void *ignore) {
     static const char SUBTAG[] = "dht11-async-websocket";
 
-    uint8_t data[3]; 
+    uint8_t data[3];
     size_t length = 0;
     data[0] = DHT11_CMD;
-    const bool is_read_success = dht11_read(&dht11_sensor) == ESP_OK;
+    struct DHT11_Measurement measurement;
+    const bool is_read_success = dht11_read(dht11_data_pin, &measurement) == ESP_OK;
     if (is_read_success) {
-        data[1] = dht11_sensor.humidity;
-        data[2] = dht11_sensor.temperature;
+        data[1] = measurement.humidity;
+        data[2] = measurement.temperature;
         length = 3;
     } else {
         data[1] = 0xFF;
@@ -279,7 +280,7 @@ void async_send_dht11(void *ignore) {
     dht11_websocket_client = NULL;
     if (status == ESP_OK) {
         if (is_read_success) {
-            ESP_LOGI(SUBTAG, "Sent dht11 data: humidity=%u, temperature=%u", data[1], data[2]);
+            ESP_LOGI(SUBTAG, "Sent dht11 data: humidity=%u, temperature=%u", measurement.humidity, measurement.temperature);
         } else {
             ESP_LOGI(SUBTAG, "Sent dht11 read fail response");
         }

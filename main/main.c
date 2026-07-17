@@ -48,10 +48,10 @@ void app_main()
 {
     ESP_LOGI(INIT_TAG, "entering main function!");
 
-    if (dht11_init(&dht11_sensor) == ESP_OK) {
-        ESP_LOGI(INIT_TAG, "initialised dht11 sensor on pin: %u", dht11_sensor.pin_number);
+    if (dht11_init(dht11_data_pin) == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "initialised dht11 sensor on pin: %u", dht11_data_pin);
     } else {
-        ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_sensor.pin_number);
+        ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_data_pin);
     }
 
     shifted_pwm_init();

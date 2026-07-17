@@ -2,14 +2,14 @@
 #define __DHT11_H__
 
 #include <esp_err.h>
+#include <driver/gpio.h>
 
-typedef struct dht11_sensor {
-    uint8_t pin_number;
+struct DHT11_Measurement {
     uint8_t temperature;
     uint8_t humidity;
-} dht11_sensor_t;
+};
 
-esp_err_t dht11_init(dht11_sensor_t *s);
-esp_err_t dht11_read(dht11_sensor_t *s);
+esp_err_t dht11_init(gpio_num_t pin);
+esp_err_t dht11_read(gpio_num_t pin, struct DHT11_Measurement* measurement);
 
 #endif

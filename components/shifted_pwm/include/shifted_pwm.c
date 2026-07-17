@@ -1,24 +1,30 @@
 #include "shifted_pwm.h"
-
 #include <stdbool.h>
-#include "driver/gpio.h"
-#include "driver/spi.h"
-#include "driver/hw_timer.h"
+#include <esp_err.h>
+#include <driver/gpio.h>
+#include <driver/spi.h>
+#include <driver/hw_timer.h>
+#include <FreeRTOS.h>
 
-#include "FreeRTOS.h"
-#include "freertos/portmacro.h"
-#include "freertos/task.h"
+static uint8_t SHIFTED_PWM_TRIGGER_VALUES[SHIFTED_PWM_TOTAL_PINS] = {0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t SHIFTED_PWM_COUNTER = 0;
+static uint32_t SHIFTED_PWM_MOSI_BUFFER = 0x0000;
+static spi_trans_t SHIFTED_PWM_SPI_TRANSMISSION_PARAMETERS = {
+    .cmd = NULL,
+    .addr = NULL,
+    .mosi = &SHIFTED_PWM_MOSI_BUFFER,
+    .miso = NULL,
+    .bits = {
+        .cmd = 0,
+        .addr = 0,
+        .mosi = SHIFTED_PWM_TOTAL_PINS,
+        .miso = 0,
+    },
+};
 
-#include <stdio.h>
+static void IRAM_ATTR isr_shifted_pwm_increment_counter(void* ignore);
 
-static uint8_t pwm_values[MAX_PWM_PINS] = {0, 0, 0, 0, 0, 0, 0, 0};
-static uint8_t current_cycle = 0;
-static uint32_t current_value = 0x0000; // cast 32bit for performance?
-static spi_trans_t transmission_params = {0};
-
-void shifted_pwm_update(void *ignore);
-
-void shifted_pwm_init() {
+esp_err_t shifted_pwm_init(void) {
     spi_config_t spi_config;
     // Load default interface parameters
     // CS_EN:1, MISO_EN:1, MOSI_EN:1, BYTE_TX_ORDER:1, BYTE_TX_ORDER:1, BIT_RX_ORDER:0, BIT_TX_ORDER:0, CPHA:0, CPOL:0
@@ -40,56 +46,48 @@ void shifted_pwm_init() {
     spi_config.clk_div = SPI_20MHz_DIV;
     // Register SPI event callback function
     spi_config.event_cb = NULL;
-    spi_init(HSPI_HOST, &spi_config);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(spi_init(HSPI_HOST, &spi_config));
 
-
-    transmission_params.mosi = &current_value;
-    transmission_params.bits.mosi = 8;
-    
-
-    hw_timer_init(shifted_pwm_update, NULL);
-    hw_timer_set_clkdiv(TIMER_CLKDIV_1);
-    hw_timer_set_reload(true);
-    hw_timer_set_intr_type(TIMER_EDGE_INT);
-    hw_timer_set_load_data(5000);
-    hw_timer_enable(true);
-    // hw_timer_alarm_us(51, true);
+    // setup timer to trigger counter isr
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_init(isr_shifted_pwm_increment_counter, NULL));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_clkdiv(TIMER_CLKDIV_1));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_reload(true));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_intr_type(TIMER_EDGE_INT));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_load_data(5000));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_enable(true));
+    // ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_alarm_us(51, true));
+    return ESP_OK;
 }
 
-void shifted_pwm_update(void *ignore) {
-    uint8_t old_value = current_value;
-    if (current_cycle == 0) {
-        current_value = 0xFF;
-    }
-    
-    for (int i = 0; i < MAX_PWM_PINS; i++) {
-        if (current_cycle == pwm_values[i]) {
-            current_value &= ~(1u << i);
+void IRAM_ATTR isr_shifted_pwm_increment_counter(void* ignore) {
+    const uint32_t old_output = SHIFTED_PWM_MOSI_BUFFER;
+    for (int i = 0; i < SHIFTED_PWM_TOTAL_PINS; i++) {
+        const bool is_triggered = SHIFTED_PWM_COUNTER >= SHIFTED_PWM_TRIGGER_VALUES[i];
+        if (is_triggered) {
+            SHIFTED_PWM_MOSI_BUFFER &= ~((uint32_t)1 << i);
+        } else {
+            SHIFTED_PWM_MOSI_BUFFER |=  ((uint32_t)1 << i);
         }
     }
-
-    if (current_value != old_value) {
-        spi_trans(HSPI_HOST, &transmission_params);
+    if (old_output != SHIFTED_PWM_MOSI_BUFFER) {
+        spi_trans(HSPI_HOST, &SHIFTED_PWM_SPI_TRANSMISSION_PARAMETERS);
     }
 
-    current_cycle += 1;
-    
-    // If 255, then can rely on overflow for reset
-    #if MAX_PWM_CYCLES < 255
-    if (current_cycle > MAX_PWM_CYCLES) {
-        current_cycle = 0;
+    SHIFTED_PWM_COUNTER += 1;
+    // If 255, then can rely on overflow for reseting uint8_t counter
+    #if SHIFTED_PWM_MAX_COUNTER_VALUE < 255
+    if (SHIFTED_PWM_COUNTER > SHIFTED_PWM_MAX_COUNTER_VALUE) {
+        SHIFTED_PWM_COUNTER = 0;
     }
     #endif
 }
 
-uint8_t get_pwm_value(uint8_t pin) {
-    return pwm_values[pin];
+uint8_t shifted_pwm_get_value(uint8_t pin) {
+    assert(pin < SHIFTED_PWM_TOTAL_PINS);
+    return SHIFTED_PWM_TRIGGER_VALUES[pin];
 }
 
-void set_pwm_value(uint8_t pin, uint8_t value) {
-    if (value > MAX_PWM_CYCLES) {
-        value = MAX_PWM_CYCLES;
-    }
-    pwm_values[pin] = value;
+void shifted_pwm_set_value(uint8_t pin, uint8_t value) {
+    assert(pin < SHIFTED_PWM_TOTAL_PINS);
+    SHIFTED_PWM_TRIGGER_VALUES[pin] = value;
 }
-

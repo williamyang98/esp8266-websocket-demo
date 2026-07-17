@@ -54,8 +54,7 @@ static httpd_uri_t websocket_uri = {
 static esp_err_t init_nvs(void);
 static esp_err_t init_server(void);
 
-void app_main()
-{
+void app_main(void) {
     ESP_LOGI(INIT_TAG, "entering main function!");
 
     if (dht11_init(dht11_data_pin) == ESP_OK) {
@@ -70,10 +69,13 @@ void app_main()
         ESP_LOGE(INIT_TAG, "failed to initialise pc io");
     }
 
-    shifted_pwm_init();
-    ESP_LOGI(INIT_TAG, "initialised led gpio");
-    for (int i = 0; i < 8; i++) {
-        set_pwm_value(i, 0);
+    if (shifted_pwm_init() == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "initialised shifted pwm");
+        for (int i = 0; i < SHIFTED_PWM_TOTAL_PINS; i++) {
+            shifted_pwm_set_value(i, 0);
+        }
+    } else {
+        ESP_LOGE(INIT_TAG, "failed to initialise shifted pwm");
     }
 
     init_nvs();

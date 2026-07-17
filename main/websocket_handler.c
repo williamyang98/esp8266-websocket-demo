@@ -374,20 +374,20 @@ void handle_led(httpd_req_t *request, uint8_t *data, int length) {
     if (mode == LED_GET) {
         reply_buffer[0] = LED_CMD;
         reply_buffer[1] = LED_GET;
-        reply_buffer[2] = MAX_PWM_PINS;
-        for (int i = 0; i < MAX_PWM_PINS; i++) {
-            reply_buffer[3+i] = get_pwm_value(i);
+        reply_buffer[2] = SHIFTED_PWM_TOTAL_PINS;
+        for (int i = 0; i < SHIFTED_PWM_TOTAL_PINS; i++) {
+            reply_buffer[3+i] = shifted_pwm_get_value(i);
         }
-        write_websocket_binary_data(request, reply_buffer, 3+MAX_PWM_PINS);
+        write_websocket_binary_data(request, reply_buffer, 3+SHIFTED_PWM_TOTAL_PINS);
     } else if (mode == LED_SET) {
         for (int i = 1; i < length-1; i+=2) {
-            uint8_t pin = data[i];
-            uint8_t value = data[i+1];
-            if (pin < MAX_PWM_PINS) {
-                set_pwm_value(pin, value);
+            const uint8_t pin = data[i];
+            const uint8_t value = data[i+1];
+            if (pin < SHIFTED_PWM_TOTAL_PINS) {
+                shifted_pwm_set_value(pin, value);
             }
         }
-        // disable reply since limits bandwidth
+        // disable reply since it slows things down
         // reply_buffer[0] = LED_CMD;
         // reply_buffer[1] = LED_SET;
         // write_websocket_data(request, reply_buffer, 2);

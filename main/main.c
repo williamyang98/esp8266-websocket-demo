@@ -20,7 +20,6 @@
 #include "dht11.h"
 #include "global_periphs.h"
 #include "pc_io.h"
-#include "pc_io_interrupt.h"
 #include "shifted_pwm.h"
 
 #include "webserver.h"
@@ -28,6 +27,17 @@
 #include "wifi_sta.h"
 
 #define INIT_TAG "main-init"
+
+const gpio_num_t dht11_data_pin = GPIO_NUM_2; // extern
+struct PC_IO_Config pc_io_config = { // extern
+    // gpio setup
+    .power_pin = GPIO_NUM_5,
+    .power_func = FUNC_GPIO5,
+    .reset_pin = GPIO_NUM_4,
+    .reset_func = FUNC_GPIO4,
+    .status_pin = GPIO_NUM_12,
+    .status_func = FUNC_GPIO12,
+};
 
 static httpd_handle_t http_server = NULL;
 
@@ -54,20 +64,24 @@ void app_main()
         ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_data_pin);
     }
 
+    if (pc_io_init(&pc_io_config) == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "initialised pc io");
+    } else {
+        ESP_LOGE(INIT_TAG, "failed to initialise pc io");
+    }
+
     shifted_pwm_init();
     ESP_LOGI(INIT_TAG, "initialised led gpio");
-
-    pc_io_init();
-    pc_io_interrupt_init();
     for (int i = 0; i < 8; i++) {
         set_pwm_value(i, 0);
     }
-    ESP_LOGI(INIT_TAG, "initialised pc io gpio and interrupts");
 
     init_nvs();
     wifi_init_sta();
     init_server();
 
+    // LINK: https://esp32.com/viewtopic.php?p=6023&sid=48c7254ec4cbe0d99f743e1d3687894d#p6023
+    //       vTaskStartScheduler() is already called before app_main() so don't call it again
     // vTaskStartScheduler();
     // ESP_LOGI(INIT_TAG, "starting task scheduler!");
 

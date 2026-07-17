@@ -3,7 +3,6 @@
 #include "global_periphs.h"
 #include "shifted_pwm.h"
 #include "pc_io.h"
-#include "pc_io_interrupt.h"
 #include "dht11.h"
 
 #include <esp_log.h>
@@ -205,7 +204,7 @@ esp_err_t listen_websocket_open(httpd_req_t *request) {
     client->server_handle = request->handle;
     const size_t total_clients = count_total_websocket_clients();
     ESP_LOGI(TAG, "%u total websocket clients after adding one", total_clients);
-    return pc_io_status_listen(pc_io_status_listener, (void*)client);
+    return pc_io_status_listen(&pc_io_config, pc_io_status_listener, (void*)client);
 }
 
 esp_err_t listen_websocket_close(httpd_req_t *request) {
@@ -217,7 +216,7 @@ esp_err_t listen_websocket_close(httpd_req_t *request) {
         return ESP_FAIL;
     }
 
-    pc_io_status_unlisten(pc_io_status_listener, (void *)client);
+    pc_io_status_unlisten(&pc_io_config,pc_io_status_listener, (void *)client);
     free(client);
 
     const size_t remaining_clients = count_total_websocket_clients();
@@ -298,10 +297,10 @@ void handle_pc_io(httpd_req_t *request, uint8_t *data, int length) {
     ESP_LOGD("pc-io-websocket", "Got command: 0x%02x", cmd);
     esp_err_t resp_status = ESP_OK;
     switch (cmd) {
-    case PC_IO_OFF:     resp_status = pc_io_power_off();    break;
-    case PC_IO_ON:      resp_status = pc_io_power_on();     break;
-    case PC_IO_RESET:   resp_status = pc_io_reset();        break;
-    case PC_IO_STATUS:  pc_io_is_powered() ? (resp_status = ESP_OK) : (resp_status = ESP_FAIL); break;
+    case PC_IO_OFF:     resp_status = pc_io_power_off(&pc_io_config); break;
+    case PC_IO_ON:      resp_status = pc_io_power_on(&pc_io_config); break;
+    case PC_IO_RESET:   resp_status = pc_io_reset(&pc_io_config); break;
+    case PC_IO_STATUS:  pc_io_is_powered(&pc_io_config) ? (resp_status = ESP_OK) : (resp_status = ESP_FAIL); break;
     default:            ESP_LOGE(SUBTAG, "Unknown command: 0x%02x", cmd); return;
     }
 
@@ -349,7 +348,6 @@ void async_send_pc_io_status(void *args) {
     reply_buffer[0] = PC_IO_CMD;
     reply_buffer[1] = PC_IO_STATUS;
     reply_buffer[2] = data->is_powered ? 0x01 : 0x00;
-    ESP_LOGI(SUBTAG, "ISR is_powered: %d", data->is_powered);
     httpd_ws_frame_t frame = {
         .fragmented = false,
         .final = true,

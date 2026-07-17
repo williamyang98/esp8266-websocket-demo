@@ -2,8 +2,8 @@
 
 #include <httpd_server/esp_http_server.h>
 #include <esp_log.h>
+#include <esp_err.h>
 #include <esp_spiffs.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -35,7 +35,9 @@ void free_endpoint(struct EndpointFile* file) {
 }
 
 static esp_err_t handle_endpoint_file_request(httpd_req_t *request) {
+    assert(request != NULL);
     const struct EndpointFile* file = (struct EndpointFile*)(request->user_ctx);
+    assert(file != NULL);
 
     // SOURCE: https://devdojo.com/vnnvanhuong/demo-http-caching-with-etag
     // Support file caching
@@ -51,14 +53,14 @@ static esp_err_t handle_endpoint_file_request(httpd_req_t *request) {
     } else if (etag_status != ESP_ERR_NOT_FOUND) {
         ESP_LOGE(TAG, "request contained malformed 'If-None-Match' etag (%s), uri='%s'", esp_err_to_name(etag_status), request->uri);
     }
-    
-    httpd_resp_set_hdr(request, "ETag", file->sha1_hash);
+
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_set_hdr(request, "ETag", file->sha1_hash));
     // cache for 1 week, always check if etag matches
-    httpd_resp_set_hdr(request, "Cache-Control", "max-age=604800, public, no-cache");
-    httpd_resp_set_type(request, file->mimetype);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_set_hdr(request, "Cache-Control", "max-age=604800, public, no-cache"));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_set_type(request, file->mimetype));
     if (is_cache) {
-        httpd_resp_set_status(request, "304 Not Modified");
-        httpd_resp_send(request, NULL, 0);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_set_status(request, "304 Not Modified"));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send(request, NULL, 0));
         return ESP_OK;
     }
 
@@ -66,10 +68,9 @@ static esp_err_t handle_endpoint_file_request(httpd_req_t *request) {
     FILE* fd = fopen(file->filepath, "rb");
     if (fd == NULL) {
         ESP_LOGE(TAG, "Failed to open file: %s", file->filepath);
-        httpd_resp_send_err(request, HTTPD_404_NOT_FOUND, "File not found");
+        ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_err(request, HTTPD_404_NOT_FOUND, "File not found"));
         return ESP_FAIL;
     }
-
     bool is_success = true;
     while (true) {
         const size_t total_read_bytes = fread(SCRATCH_BUFFER, 1, SCRATCH_BUFFER_SIZE, fd);
@@ -81,8 +82,8 @@ static esp_err_t handle_endpoint_file_request(httpd_req_t *request) {
             break;
         }
     }
-    httpd_resp_send_chunk(request, NULL, 0);
     fclose(fd);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(request, NULL, 0));
     return is_success ? ESP_OK : ESP_FAIL;
 }
 
@@ -280,20 +281,14 @@ static esp_err_t add_endpoints(httpd_handle_t server) {
 }
 
 esp_err_t webserver_register_endpoints(httpd_handle_t server) {
-    if (server == NULL) {
-        ESP_LOGE(TAG, "server was null");
-        return ESP_FAIL;
-    }
-
+    assert(server != NULL);
     if (init_spiffs() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read files from spiffs partition");
         return ESP_FAIL;
     }
-
     if (add_endpoints(server) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create webserver endpoints");
         return ESP_FAIL;
     }
-
     return ESP_OK;
 }

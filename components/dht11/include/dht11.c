@@ -20,11 +20,7 @@ esp_err_t dht11_init(gpio_num_t pin) {
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    const esp_err_t status = gpio_config(&config);
-    if (status != ESP_OK) {
-        ESP_LOGE(TAG, "unable to initialise data pin: '%s'", esp_err_to_name(status));
-        return ESP_FAIL;
-    }
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&config));
     return ESP_OK;
 }
 
@@ -33,7 +29,6 @@ esp_err_t dht11_read(gpio_num_t pin, struct DHT11_Measurement* measurement) {
     taskENTER_CRITICAL();
     const esp_err_t status = dht11_read_data(pin, measurement);
     taskEXIT_CRITICAL();
-
     if (status != ESP_OK) {
         ESP_LOGE(TAG, "failed to read data");
         return ESP_FAIL;
@@ -43,9 +38,9 @@ esp_err_t dht11_read(gpio_num_t pin, struct DHT11_Measurement* measurement) {
 
 esp_err_t dht11_read_data(gpio_num_t pin, struct DHT11_Measurement* measurement) {
     // pulldown for at least 18ms
-    gpio_set_level(pin, 0);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(pin, 0));
     os_delay_us(20000);
-    gpio_set_level(pin, 1);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(pin, 1));
 
     // wait for pull down response after 20 to 40 us
     if (dht11_wait_signal(pin, 60, 0) < 0) {

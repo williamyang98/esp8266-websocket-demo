@@ -1,9 +1,9 @@
-#ifndef __WEBSOCKET_LISTENER_H__
-#define __WEBSOCKET_LISTENER_H__
+#ifndef __WEBSOCKET_HANDLER_H__
+#define __WEBSOCKET_HANDLER_H__
 
-#include <httpd_server/esp_http_server.h>
 #include <esp_err.h>
+#include "websocket.h"
 
-esp_err_t websocket_handler(httpd_req_t *request);
+void websocket_attach_handlers(struct Websocket* websocket);
 
 #endif

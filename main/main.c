@@ -23,13 +23,14 @@
 #include "shifted_pwm.h"
 
 #include "webserver.h"
+#include "websocket.h"
 #include "websocket_handler.h"
 #include "wifi_sta.h"
 
 #define INIT_TAG "main-init"
 
-const gpio_num_t dht11_data_pin = GPIO_NUM_2; // extern
-struct PC_IO_Config pc_io_config = { // extern
+const gpio_num_t g_dht11_data_pin = GPIO_NUM_2; // extern
+struct PC_IO_Config g_pc_io_config = { // extern
     // gpio setup
     .power_pin = GPIO_NUM_5,
     .power_func = FUNC_GPIO5,
@@ -38,18 +39,23 @@ struct PC_IO_Config pc_io_config = { // extern
     .status_pin = GPIO_NUM_12,
     .status_func = FUNC_GPIO12,
 };
+struct Websocket g_websocket = { // extern
+    // buffers
+    .receive_buffer_size = 0,
+    .transmit_buffer_size = 0,
+    .receive_buffer = NULL,
+    .transmit_buffer = NULL,
+    // handles
+    .uri = "/api/v1/websocket",
+    .server = NULL,
+    .clients = NULL,
+    // callbacks
+    .on_binary_frame = NULL,
+    .on_open = NULL,
+    .on_close = NULL,
+};
 
 static httpd_handle_t http_server = NULL;
-
-static httpd_uri_t websocket_uri = {
-    .uri = "/api/v1/websocket",
-    .method = HTTP_GET,
-    .handler = websocket_handler,
-    .user_ctx = NULL,
-    .is_websocket = true,
-    .handle_ws_control_frames = true,
-    .supported_subprotocol = NULL,
-};
 
 static esp_err_t init_nvs(void);
 static esp_err_t init_server(void);
@@ -57,13 +63,13 @@ static esp_err_t init_server(void);
 void app_main(void) {
     ESP_LOGI(INIT_TAG, "entering main function!");
 
-    if (dht11_init(dht11_data_pin) == ESP_OK) {
-        ESP_LOGI(INIT_TAG, "initialised dht11 sensor on pin: %u", dht11_data_pin);
+    if (dht11_init(g_dht11_data_pin) == ESP_OK) {
+        ESP_LOGI(INIT_TAG, "initialised dht11 sensor on pin: %u", g_dht11_data_pin);
     } else {
-        ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", dht11_data_pin);
+        ESP_LOGE(INIT_TAG, "failed to initialise dht11 sensor on pin: %u", g_dht11_data_pin);
     }
 
-    if (pc_io_init(&pc_io_config) == ESP_OK) {
+    if (pc_io_init(&g_pc_io_config) == ESP_OK) {
         ESP_LOGI(INIT_TAG, "initialised pc io");
     } else {
         ESP_LOGE(INIT_TAG, "failed to initialise pc io");
@@ -112,14 +118,15 @@ esp_err_t init_server(void) {
         return ESP_FAIL;
     }
 
-    const esp_err_t websocket_register_status = httpd_register_uri_handler(http_server, &websocket_uri);
+    const esp_err_t websocket_register_status = websocket_register(http_server, &g_websocket, 64);
     if (websocket_register_status == ESP_OK) {
         ESP_LOGI(INIT_TAG, "registered websocket handler on port=%d", port);
+        websocket_attach_handlers(&g_websocket);
     } else {
-        ESP_LOGE(INIT_TAG, "failed to register websocket handler on port=%d (%s)", port, esp_err_to_name(register_status));
+        ESP_LOGE(INIT_TAG, "failed to register websocket handler on port=%d, err='%s'", port, esp_err_to_name(websocket_register_status));
         return ESP_FAIL;
     }
-    
+
     return ESP_OK;
 }
 

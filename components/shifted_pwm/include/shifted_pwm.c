@@ -32,9 +32,9 @@ esp_err_t shifted_pwm_init(void) {
     // Load default interrupt enable
     // TRANS_DONE: true, WRITE_STATUS: false, READ_STATUS: false, WRITE_BUFFER: false, READ_BUFFER: false
     spi_config.intr_enable.val = SPI_MASTER_DEFAULT_INTR_ENABLE;
-    // Cancel hardware cs
+    // Enable hardware cs to toggle RCLK to latch output on 74HC595 shift register
     spi_config.interface.cs_en = 1;
-    // MISO pin is used for DC
+    // Disable MISO pin to free it for other GPIO operations
     spi_config.interface.miso_en = 0;
     // CPOL: 1, CPHA: 1
     spi_config.interface.cpol = 0;
@@ -43,17 +43,20 @@ esp_err_t shifted_pwm_init(void) {
     // 8266 Only support half-duplex
     spi_config.mode = SPI_MASTER_MODE;
     // Set the SPI clock frequency division factor
-    spi_config.clk_div = SPI_20MHz_DIV;
+    spi_config.clk_div = SPI_2MHz_DIV;
     // Register SPI event callback function
     spi_config.event_cb = NULL;
     ESP_ERROR_CHECK_WITHOUT_ABORT(spi_init(HSPI_HOST, &spi_config));
 
     // setup timer to trigger counter isr
+    // f_led = f_clk / CLK_DIV / HARDWARE_COUNTER / SOFTWARE_COUNTER
+    //       = 80MHz / 16 / 256 / 128
+    //       = 152.6Hz
     ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_init(isr_shifted_pwm_increment_counter, NULL));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_clkdiv(TIMER_CLKDIV_1));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_clkdiv(TIMER_CLKDIV_16));
     ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_reload(true));
     ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_intr_type(TIMER_EDGE_INT));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_load_data(5000));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_set_load_data(256));
     ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_enable(true));
     // ESP_ERROR_CHECK_WITHOUT_ABORT(hw_timer_alarm_us(51, true));
     return ESP_OK;

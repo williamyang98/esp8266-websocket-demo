@@ -13,10 +13,16 @@ static int32_t dht11_wait_signal(gpio_num_t pin, uint32_t timeout, uint32_t leve
 
 // DOC: https://www.mouser.com/datasheet/2/758/DHT11-Technical-Data-Sheet-Translated-Version-1143054.pdf
 esp_err_t dht11_init(gpio_num_t pin) {
+    // dht11 uses single wire communication that is connected to a pull-up resistor
+    // outputing 0 to the line means pulling it down (open drain), and 1 means leaving it pulled up
     gpio_config_t config = {
         .pin_bit_mask = (1u << pin),
         .mode = GPIO_MODE_OUTPUT_OD,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        // NOTE: DHT11 breakout board comes with its own pull up resistor to Vcc
+        // This might be connected to 5V instead of the ESP8266's 3.3V
+        // So adding another pull up resistor would set the overall pull up voltage to something in the middle
+        // .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
